@@ -1,6 +1,7 @@
 package scors
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -25,7 +26,7 @@ func NewScoreHandler(router *http.ServeMux, deps AccountsHandlerDeps) {
 		AccountsRepository: deps.AccountsRepository,
 	}
 
-	router.Handle("PATCH /accounts/{id}", middleware.IsAuth(handler.Update()))
+	router.Handle("PATCH /accounts/{id}", middleware.IsAuth(handler.Update(), deps.Config))
 	router.HandleFunc("POST /accounts", handler.Create())
 	router.HandleFunc("DELETE /accounts/{id}", handler.Delete())
 	router.HandleFunc("GET /accounts/{id}", handler.GetById())
@@ -57,6 +58,10 @@ func (handler *AccountsHandler) Create() http.HandlerFunc {
 
 func (handler *AccountsHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		email, ok := r.Context().Value(middleware.ContextEmailKey).(string)
+		if ok {
+			fmt.Println(email)
+		}
 		body, err := req.HandlerBody[AccountsUpdateRequest](&w, r)
 		if err != nil {
 			return

@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/BibikovAnton/finance-tracker-api/configs"
 	"github.com/BibikovAnton/finance-tracker-api/internal/req"
 	"github.com/BibikovAnton/finance-tracker-api/internal/res"
+	"github.com/BibikovAnton/finance-tracker-api/pkg/jwt"
 )
 
 type AuthHandler struct {
@@ -34,9 +34,23 @@ func (handler *AuthHandler) Login() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		handler.AuthService.Login(body.Email, body.Password)
-		res.Json(w, body, 201)
-		fmt.Println(body)
+		email, err := handler.AuthService.Login(body.Email, body.Password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		token, err := jwt.NewJWT(handler.Config.Auth.Sectet).Create(jwt.JWTData{
+			Email: email,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data := LoginResponse{
+			Token: token,
+		}
+		res.Json(w, data, 201)
+
 	}
 }
 
@@ -46,8 +60,22 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		handler.AuthService.Register(body.Email, body.Password, body.Name)
-		res.Json(w, body, 201)
-		fmt.Println(body)
+		email, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		token, err := jwt.NewJWT(handler.Config.Auth.Sectet).Create(jwt.JWTData{
+			Email: email,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data := RegisterResponse{
+			Token: token,
+		}
+		res.Json(w, data, 201)
+
 	}
 }
